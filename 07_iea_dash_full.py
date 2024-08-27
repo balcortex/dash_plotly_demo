@@ -40,19 +40,19 @@ app.layout = [
         placeholder="Select a category",
         value="Energy",
     ),
-    html.P("Select a product: "),
-    dcc.Dropdown(
-        df["product"].unique(),
-        id="product-dropdown",
-        placeholder="Select a product",
-        value="Total",
-    ),
     html.P("Select a flow: "),
     dcc.Dropdown(
         df["flow"].unique(),
         id="flow-dropdown",
         placeholder="Select a flow",
         value="Total energy supply",
+    ),
+    html.P("Select a product: "),
+    dcc.Dropdown(
+        df["product"].unique(),
+        id="product-dropdown",
+        placeholder="Select a product",
+        value="Total",
     ),
     dcc.Graph(figure={}, id="plot-1"),
     dcc.Graph(figure={}, id="plot-2"),
@@ -103,10 +103,9 @@ def update_graph_1(
         )
     )
     fig.update_layout(
-        title=f"{selected_flow}",
+        title=f"{selected_flow} - {selected_product}",
         hovermode="x unified",
-        # xaxis_title="Year",
-        # yaxis_title="Total Energy Supply (PJ)",
+        yaxis_title=f"{dff.unit.unique()[0]}",
     )
     fig.update(layout={"title": {"x": 0.5}})  # Center the title
     return fig
@@ -187,13 +186,35 @@ def update_graph_2(
     )
 
     fig.update_layout(
-        title=f"{selected_flow}",
+        title=f"{selected_flow} - {selected_product}",
         hovermode="x unified",
-        # xaxis_title="Year",
-        # yaxis_title="Total Energy Supply (PJ)",
+        yaxis_title=f"{dff.unit.unique()[0]}",
     )
     fig.update(layout={"title": {"x": 0.5}})  # Center the title
     return fig
+
+
+@callback(
+    Output(component_id="flow-dropdown", component_property="options"),
+    Output(component_id="flow-dropdown", component_property="value"),
+    Input(component_id="category-dropdown", component_property="value"),
+)
+def update_flow_dropdown(selected_category):
+    dff = df[df.category == selected_category]
+    options = dff.flow.unique()
+    # Update the list of options and select the first one
+    return options, options[0]
+
+
+@callback(
+    Output(component_id="product-dropdown", component_property="options"),
+    Output(component_id="product-dropdown", component_property="value"),
+    Input(component_id="flow-dropdown", component_property="value"),
+)
+def update_product_dropdown(selected_flow):
+    dff = df[df.flow == selected_flow]
+    options = dff["product"].unique()
+    return options, options[0]
 
 
 def confidence_interval(y, yhat, confidence=0.95):
